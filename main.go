@@ -42,35 +42,54 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
 	var i uint = 0
+	var colnames []string
+	var coltypes []string
+	var inserts []string
 
 	for rows.Next() {
-		var sql = "insert into table values ("
 		row, err := rows.Columns()
 
 		if err != nil {
 			fmt.Println(err)
 		}
-		for _, col := range row {
+		var sql = "insert into t values ("
+		for n, col := range row {
 			if i == *s { //header
 				//TODO create func to strip all non-allowable chars
 				col = strings.ReplaceAll(col, " ", "_")
 				col = strings.ReplaceAll(col, "\n", "_")
 				col = strings.ReplaceAll(col, "(", "")
 				col = strings.ReplaceAll(col, ")", "")
-				fmt.Print(col, "\n")
-			} else { //rows
-				if i > *s {
-					//TODO check if cell can be converted to number
+				colnames = append(colnames, col)
+				coltypes = append(coltypes, "text")
+			} else if i > *s {
+					//TODO check if cell can be converted to number or date
 					sql = sql + "\"" + col + "\","
-				}
+					//TODO set type here
+					coltypes[n] = "numeric"
 			}
 		}
-		fmt.Print(strings.TrimRight(sql, ","), ");\n")
-
+		if i > *s {
+			inserts = append(inserts, sql)
+		}
 		i++
-		if i >= 15 {
+		if i >= 8 {
 			break
 		}
+	}
+
+	fmt.Print("create table t (")
+	for n, c := range colnames {
+		fmt.Print(c, " ", coltypes[n])
+		if n < len(colnames) - 1 {
+			fmt.Print(",")
+		}
+	}
+	fmt.Println(");")
+
+	for _, s := range inserts {
+		fmt.Println(strings.TrimRight(s, ","), ");")
 	}
 }
