@@ -1,4 +1,4 @@
-module eia
+module xls2csv
 
 go 1.16
 
