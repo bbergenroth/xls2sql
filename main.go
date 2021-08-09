@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+type stripFlags []string
+
+func (i *stripFlags) String() string {
+	return "nodata"
+}
+
+func (i *stripFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+var stripFlag stripFlags
+
 func clean(s string) string {
 	var replacer = strings.NewReplacer(" ", "_", "\n", "_", "(", "", ")", "")
 	return strings.ToLower(replacer.Replace(s))
@@ -30,18 +43,6 @@ func toCut(a string, list []string) bool {
 	}
 	return false
 }
-
-type stripFlags []string
-
-func (i *stripFlags) String() string {
-	return "nodata"
-}
-
-func (i *stripFlags) Set(value string) error {
-	*i = append(*i, value)
-	return nil
-}
-var stripFlag stripFlags
 
 func main() {
 	w := flag.String("w", "", "optional worksheet name (defaults to first)")
@@ -104,31 +105,28 @@ func main() {
 				colnames = append(colnames, clean(col))
 				coltypes = append(coltypes, "text") //default type
 			} else if i > *s {
-					//TODO check if cell can be converted to date
-					if isNumber(col) {
-						//TODO add db dialects (postgreSQL, Oracle, etc)
-						coltypes[n] = "numeric"
-						sql = sql + col + ","
-					} else if col == "" || toCut(col, stripFlag){
-						sql = sql + "NULL,"
-					} else {
-						sql = sql + "\"" + col + "\","
-					}
+				//TODO check if cell can be converted to date
+				if isNumber(col) {
+					//TODO add db dialects (postgreSQL, Oracle, etc)
+					coltypes[n] = "numeric"
+					sql = sql + col + ","
+				} else if col == "" || toCut(col, stripFlag) {
+					sql = sql + "NULL,"
+				} else {
+					sql = sql + "\"" + col + "\","
+				}
 			}
 		}
 		if i > *s {
 			inserts = append(inserts, sql)
 		}
 		i++
-		if i >= 8 {
-			break
-		}
 	}
 
 	fmt.Print("create table " + clean(tablename) + " (")
 	for n, c := range colnames {
 		fmt.Print(c, " ", coltypes[n])
-		if n < len(colnames) - 1 {
+		if n < len(colnames)-1 {
 			fmt.Print(",")
 		}
 	}
