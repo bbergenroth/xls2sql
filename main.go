@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type stripFlags []string
@@ -27,7 +28,21 @@ func clean(s string) string {
 	return strings.ToLower(replacer.Replace(s))
 }
 
+func isDate(t string) bool {
+	layout := "2006-01-02"
+	_, err := time.Parse(layout, t)
+
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func isNumber(t string) bool {
+	//special cases (nan,inf)
+	if strings.EqualFold(t, "nan") || strings.EqualFold(t, "inf") {
+		return false
+	}
 	_, err := strconv.ParseFloat(t, 64)
 	if err != nil {
 		return false
@@ -110,16 +125,25 @@ func main() {
 		for n, col := range row {
 			if i == *s { //header
 				colnames = append(colnames, clean(col))
-				coltypes = append(coltypes, "text") //default type
+				coltypes = append(coltypes, "unknown") //default type
 			} else if i > *s {
-				//TODO check if cell can be converted to date
 				if isNumber(col) {
 					//TODO add db dialects (postgreSQL, Oracle, etc)
-					coltypes[n] = "numeric"
-					sql = sql + col + ","
+					if coltypes[n] != "text" {
+						coltypes[n] = "numeric"
+						sql = sql + col + ","
+					} else {
+						sql = sql + "'" + col + "',"
+					}
+				} else if isDate(col) {
+					if coltypes[n] != "text" {
+						coltypes[n] = "date"
+						sql = sql + "to_date('" + col + "','YYYY-MM-DD'),"
+					}
 				} else if col == "" || toCut(col, stripFlag) {
 					sql = sql + "NULL,"
 				} else {
+					coltypes[n] = "text"
 					sql = sql + "'" + col + "',"
 				}
 			}

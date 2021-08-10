@@ -2,7 +2,9 @@
 
 Basic Excel spreadsheet to sql command line tool.  Generates DDL to create table based on header row and inserts.  
 
-Spaces, \n and parentheses converted to underscores
+Spaces, \n and parentheses converted to underscores.
+Numeric, text and date data formats only supported.
+Dates only supported in YYYY-MM-DD format.
 
 ```
 Usage: xls2csv [-c nodata] [-t tablename] [-w worksheet] [-s lines] [-create-only] [-data-only] filename
@@ -19,5 +21,4 @@ Example: xls2csv -w Sheet1 -s 1 Book1.xlsx
 TODO
 - sql dialects
 - plenty of edge cases
-- date types
 - tests
