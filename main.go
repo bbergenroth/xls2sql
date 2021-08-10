@@ -65,6 +65,7 @@ func main() {
 	t := flag.String("t", "", "optional table name (defaults to sheet name")
 	c := flag.Bool("create-only", false, "only generate create table statement (no data inserts")
 	d := flag.Bool("data-only", false, "only generate insert statements (no create table)")
+	db := flag.String("db", "pg", "database dialect (pg, oracle, sqlite")
 	flag.Var(&stripFlag, "c", "nodata values to convert to null")
 	flag.Parse()
 	flag.Usage = func() {
@@ -137,8 +138,16 @@ func main() {
 					}
 				} else if isDate(col) {
 					if coltypes[n] != "text" {
-						coltypes[n] = "date"
-						sql = sql + "to_date('" + col + "','YYYY-MM-DD'),"
+						if *db == "sqlite" {
+							coltypes[n] = "text"
+							sql = sql + "'" + col + "',"
+						} else {
+							coltypes[n] = "date"
+							sql = sql + "to_date('" + col + "','YYYY-MM-DD'),"
+						}
+
+					} else {
+						sql = sql + "'" + col + "',"
 					}
 				} else if col == "" || toCut(col, stripFlag) {
 					sql = sql + "NULL,"
@@ -157,7 +166,14 @@ func main() {
 	if *d != true {
 		fmt.Print("create table " + clean(tablename) + " (")
 		for n, c := range colnames {
-			fmt.Print(c, " ", coltypes[n])
+			dtype := coltypes[n]
+			if *db == "oracle" && coltypes[n] == "text" {
+				dtype = "varchar2(4000)"
+			}
+			if *db == "oracle" && coltypes[n] == "numeric" {
+				dtype = "number"
+			}
+			fmt.Print(c, " ", dtype)
 			if n < len(colnames)-1 {
 				fmt.Print(",")
 			}
