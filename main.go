@@ -59,6 +59,13 @@ func toCut(a string, list []string) bool {
 	return false
 }
 
+func pad(a []string, s int) []string {
+	for i := len(a); i < s; i++ {
+		a = append(a, "")
+	}
+	return a
+}
+
 func main() {
 	w := flag.String("w", "", "optional worksheet name (defaults to first)")
 	s := flag.Uint("s", 0, "optional rows to skip")
@@ -115,16 +122,19 @@ func main() {
 	var colnames []string
 	var coltypes []string
 	var inserts []string
-
+	var coln int
 	for rows.Next() {
 		row, err := rows.Columns()
-
 		if err != nil {
 			fmt.Println(err)
 		}
+		//length of this array might be smaller than # of columns if trailing empty cells...
+		row = pad(row, coln)
+
 		var sql = "insert into " + tablename + "  values ("
 		for n, col := range row {
 			if i == *s { //header
+				coln = len(row)
 				colnames = append(colnames, clean(col))
 				coltypes = append(coltypes, "unknown") //default type
 			} else if i > *s {
