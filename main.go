@@ -48,12 +48,14 @@ func main() {
 	w := flag.String("w", "", "optional worksheet name (defaults to first)")
 	s := flag.Uint("s", 0, "optional rows to skip")
 	t := flag.String("t", "", "optional table name (defaults to sheet name")
+	c := flag.Bool("create-only", false, "only generate create table statement (no data inserts")
+	d := flag.Bool("data-only", false, "only generate insert statements (no create table)")
 	flag.Var(&stripFlag, "c", "nodata values to convert to null")
 	flag.Parse()
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, "Usage: xls2csv [-w worksheet] [-s lines] filename\n")
+		fmt.Fprint(os.Stderr, "Usage: xls2csv [-t tablename] [-w worksheet] [-s lines] [-create-only] [-data-only] filename\n")
 		flag.PrintDefaults()
-		fmt.Fprint(os.Stderr, "Example: xls2csv -w Sheet1 -s 1 Book1.xlsx\n")
+		fmt.Fprint(os.Stderr, "Example: xls2csv -t foo -w Sheet1 -s 1 Book1.xlsx\n")
 	}
 	if flag.NArg() == 0 {
 		flag.Usage()
@@ -62,6 +64,11 @@ func main() {
 
 	var worksheet string
 	var tablename string
+
+	if *c && *d {
+		fmt.Println("Conflicting arguments [-create-only and -data-only]")
+		os.Exit(1)
+	}
 
 	if *w != "" {
 		worksheet = *w
@@ -113,7 +120,7 @@ func main() {
 				} else if col == "" || toCut(col, stripFlag) {
 					sql = sql + "NULL,"
 				} else {
-					sql = sql + "\"" + col + "\","
+					sql = sql + "'" + col + "',"
 				}
 			}
 		}
@@ -123,16 +130,20 @@ func main() {
 		i++
 	}
 
-	fmt.Print("create table " + clean(tablename) + " (")
-	for n, c := range colnames {
-		fmt.Print(c, " ", coltypes[n])
-		if n < len(colnames)-1 {
-			fmt.Print(",")
+	if *d != true {
+		fmt.Print("create table " + clean(tablename) + " (")
+		for n, c := range colnames {
+			fmt.Print(c, " ", coltypes[n])
+			if n < len(colnames)-1 {
+				fmt.Print(",")
+			}
 		}
+		fmt.Println(");")
 	}
-	fmt.Println(");")
 
-	for _, s := range inserts {
-		fmt.Println(strings.TrimRight(s, ","), ");")
+	if *c != true {
+		for _, s := range inserts {
+			fmt.Println(strings.TrimRight(s, ","), ");")
+		}
 	}
 }
