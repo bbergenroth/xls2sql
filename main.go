@@ -81,6 +81,8 @@ func main() {
 	db := flag.String("db", "pg", "database dialect (pg, oracle, sqlite")
 	ls := flag.Bool("ls", false, "list sheets in book")
 	dt := flag.Bool("drop", false, "add drop table statement")
+	nh := flag.Bool("no-header", false, "sheet has no headers")
+
 	flag.Var(&stripFlag, "c", "nodata values to convert to null")
 	flag.Parse()
 	flag.Usage = func() {
@@ -155,11 +157,15 @@ func main() {
 
 		var sql = "insert into " + tablename + "  values ("
 		for n, col := range row {
-			if i == *s { //header
+			if *nh {
+				colnames = append(colnames, "")
+				coltypes = append(coltypes, "unknown")
+			}
+			if i == *s && !*nh { //header
 				coln = len(row)
 				colnames = append(colnames, clean(col))
 				coltypes = append(coltypes, "unknown") //default type
-			} else if i > *s {
+			} else if i > *s || *nh {
 				if isNumber(col) {
 					if coltypes[n] != "text" {
 						coltypes[n] = "numeric"
@@ -188,13 +194,13 @@ func main() {
 				}
 			}
 		}
-		if i > *s {
+		if i > *s || *nh {
 			inserts = append(inserts, sql)
 		}
 		i++
 	}
 
-	if *d != true {
+	if !*d && !*nh {
 		tbl := clean(tablename)
 		if *dt {
 			fmt.Println("drop table " + tbl + ";")
