@@ -75,6 +75,7 @@ func main() {
 	d := flag.Bool("data-only", false, "only generate insert statements (no create table)")
 	db := flag.String("db", "pg", "database dialect (pg, oracle, sqlite")
 	ls := flag.Bool("ls", false, "list sheets in book")
+	dt := flag.Bool("drop", false, "add drop table statement")
 	flag.Var(&stripFlag, "c", "nodata values to convert to null")
 	flag.Parse()
 	flag.Usage = func() {
@@ -190,7 +191,11 @@ func main() {
 	}
 
 	if *d != true {
-		fmt.Print("create table " + clean(tablename) + " (")
+		tbl := clean(tablename)
+		if *dt {
+			fmt.Println("drop table " + tbl + ";")
+		}
+		fmt.Print("create table " + tbl + " (")
 		for n, c := range colnames {
 			dtype := coltypes[n]
 			if *db == "oracle" && coltypes[n] == "text" {

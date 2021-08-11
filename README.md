@@ -7,7 +7,7 @@ Numeric, text and date data formats only supported.
 Dates only supported in YYYY-MM-DD format.
 
 ```
-Usage: xls2csv [-db dialect] [-c nodata] [-t tablename] [-w worksheet] [-s lines] [-create-only] [-data-only] [-ls] filename
+Usage: xls2csv [-db dialect] [-c nodata] [-t tablename] [-w worksheet] [-s lines] [-create-only] [-data-only] [-ls] [-drop] filename
 -c value nodata values to convert to null
 -s uint optional rows to skip
 -t string optional table name (defaults to sheet name)
@@ -16,11 +16,12 @@ Usage: xls2csv [-db dialect] [-c nodata] [-t tablename] [-w worksheet] [-s lines
 -ls list sheets in book by name and exit
 -create-only only generate create table statement (no data inserts)
 -data-only only generate insert statements (no create table)
+-drop add drop table statement
 
 Example: xls2csv -w Sheet1 -s 1 Book1.xlsx
 ```
 
 TODO
-- sql dialects
+- more sql dialects (MySQL, MSSQL)
 - plenty of edge cases
 - tests
