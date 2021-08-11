@@ -1,4 +1,4 @@
-module xls2csv
+module xls2sql
 
 go 1.16
 
