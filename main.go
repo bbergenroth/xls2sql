@@ -29,6 +29,11 @@ func clean(s string) string {
 	return strings.ToLower(replacer.Replace(s))
 }
 
+func escape(s string) string {
+	var replacer = strings.NewReplacer("'", "''")
+	return replacer.Replace(s)
+}
+
 func isDate(t string) bool {
 	layout := "2006-01-02"
 	_, err := time.Parse(layout, t)
@@ -156,31 +161,30 @@ func main() {
 				coltypes = append(coltypes, "unknown") //default type
 			} else if i > *s {
 				if isNumber(col) {
-					//TODO add db dialects (postgreSQL, Oracle, etc)
 					if coltypes[n] != "text" {
 						coltypes[n] = "numeric"
 						sql = sql + col + ","
 					} else {
-						sql = sql + "'" + col + "',"
+						sql = sql + "'" + escape(col) + "',"
 					}
 				} else if isDate(col) {
 					if coltypes[n] != "text" {
 						if *db == "sqlite" {
 							coltypes[n] = "text"
-							sql = sql + "'" + col + "',"
+							sql = sql + "'" + escape(col) + "',"
 						} else {
 							coltypes[n] = "date"
 							sql = sql + "to_date('" + col + "','YYYY-MM-DD'),"
 						}
 
 					} else {
-						sql = sql + "'" + col + "',"
+						sql = sql + "'" + escape(col) + "',"
 					}
 				} else if col == "" || toCut(col, stripFlag) {
 					sql = sql + "NULL,"
 				} else {
 					coltypes[n] = "text"
-					sql = sql + "'" + col + "',"
+					sql = sql + "'" + escape(col) + "',"
 				}
 			}
 		}
@@ -198,6 +202,10 @@ func main() {
 		fmt.Print("create table " + tbl + " (")
 		for n, c := range colnames {
 			dtype := coltypes[n]
+			//for columns that are all null set type to text
+			if coltypes[n] == "unknown" {
+				coltypes[n] = "text"
+			}
 			if *db == "oracle" && coltypes[n] == "text" {
 				dtype = "varchar2(4000)"
 			}
