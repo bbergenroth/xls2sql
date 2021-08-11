@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,7 @@ func main() {
 	c := flag.Bool("create-only", false, "only generate create table statement (no data inserts")
 	d := flag.Bool("data-only", false, "only generate insert statements (no create table)")
 	db := flag.String("db", "pg", "database dialect (pg, oracle, sqlite")
+	ls := flag.Bool("ls", false, "list sheets in book")
 	flag.Var(&stripFlag, "c", "nodata values to convert to null")
 	flag.Parse()
 	flag.Usage = func() {
@@ -101,6 +103,20 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+	if *ls {
+		m := f.GetSheetMap()
+		keys := make([]int, 0, len(m))
+		for k := range m {
+			keys = append(keys, k)
+		}
+		sort.Ints(keys)
+
+		for _, k := range keys {
+			fmt.Println(k, m[k])
+		}
+		os.Exit(0)
 	}
 	if worksheet == "" {
 		worksheet = f.GetSheetName(0)
@@ -192,6 +208,7 @@ func main() {
 	}
 
 	if *c != true {
+		fmt.Println("set define off;")
 		for _, s := range inserts {
 			fmt.Println(strings.TrimRight(s, ","), ");")
 		}
